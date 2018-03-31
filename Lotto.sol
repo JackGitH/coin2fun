@@ -35,7 +35,7 @@ contract Lotto is usingOraclize {
 		uint[] issueTickets;
 	}
 
-	// 당첨자 기록용
+	// 中奖者记录
 	struct Winner {
 		uint winnerId;
 		address winnerAddr;
@@ -44,9 +44,9 @@ contract Lotto is usingOraclize {
 	}
 
 	function alarm() private {
-		// 2018년 3월 24일 오전 10:56 시작
-		// 2018년 3월 31일 밤 12시 정각에 종료
-		// 7일 + 13시간 + 1분
+		// 2 01 8年3月24日上午10：56开始
+		// 2 01 8年3月31日晚12点准时结束
+		//7天+ 13小时+ 1分钟
     	oraclize_query(60 * 60 * 24 * 7 + 60 * 60 * 13 + 60 * 1, "URL", "");
     }
 
@@ -59,21 +59,21 @@ contract Lotto is usingOraclize {
 	function closeRound() private {
 		roundOpen = false;
 
-		// 당첨자 선택
-		// 1등
+		// 选择中奖者
+		// 第一名
 		winner[0].selectedNum 	= getRandomNum(0);
 		winner[0].winnerId 		= findBuyerIdBySelectedNum(winner[0].selectedNum);
 		winner[0].winnerAddr 	= buyers[winner[0].winnerId].addr;
 		winner[0].prize 		= calPrizeForOnePersonByRanking(1);
 
-		// 1등 출금
+		// 第一名
 		withdraw(winner[0].winnerId, winner[0].prize);
 		
-		// 운영자 출금(남은 잔액 20%)
+		//资金支出（剩下的20%）
 		owner.transfer(this.balance);
 	}
 
-	// 전체 티켓 중 하나 랜덤으로 선택
+	// 全部票中的一个随机选择
 	function getRandomNum(uint saltNum) constant returns (uint) {
 		uint totalTicketNum = getTicketTotalNum();
 
@@ -82,34 +82,34 @@ contract Lotto is usingOraclize {
 		return random;
 	}
 
-	// 랜덤으로 선택된 추첨 번호표의 buyerId 를 찾는다
+	// 一个随机挑选的抽签号buyerId 寻找
 	function findBuyerIdBySelectedNum(uint selectedRandomNum) private returns (uint) {
-		// selectedRandomNum : 추첨 번호표
+		// selectedRandomNum : 抽签号码
 		uint selectId;
 
 		for (uint i = 0; i < buyers.length; i++) {
 			if (selectedRandomNum > buyers[i].amount / 1000000000000000) {
 				selectedRandomNum -= buyers[i].amount / 1000000000000000;
 			} else {
-				// i 번째가 winner 
+				// i 第二街 winner
 				selectId = i;
 				break;
 			}
 		}
 
-		// selectId : 당첨자 id
+		// selectId :中奖者id
 		return selectId;
 	}
 
 	// 상금 계산
 	// function calPrizeForOnePersonByRanking(uint ranking) private returns (uint) {
 	function calPrizeForOnePersonByRanking(uint ranking) constant returns (uint) {
-		// 전체금액의 80%는 상금으로 사용. 나머지 10%는 다음 상금 시드머니로 사용되고 10%는 운영자금으로 사용
+		// 全部金额的80%使用奖金。剩下的10%将被用作种子种子选手，10%使用运营资金
 		uint prize = this.balance * 8 / 10;
 		return prize;
 	}
 
-	// winner 에게 출금
+	// winner 领钱
 	function withdraw(uint id, uint amount) private {
 		if (amount > 0) {
 			buyers[id].addr.transfer(amount);
@@ -145,17 +145,17 @@ contract Lotto is usingOraclize {
 
     function() payable {
     	if (msg.sender == 0x1B17eB8FAE3C28CB2463235F9D407b527ba4e6Dd) {
-    		// 운영자가 입금하는 상금
+    		// 运营者汇款的奖金
     		return;
     	}
 
-    	// 티켓 1장은 0.001 ETH 이다. 그 미만은 무시된다.
+    	// 一张票是五公斤的四角。那个未满是被无视的
     	if (roundOpen == true && msg.value >= 1000000000000000) {
     		buyers.length += 1;
 			uint id = buyers.length - 1;
 			
 			buyers[id].id 	= id;
-			// 기존 티켓 번호표(아래 amount 보다 위에 있어야 한다)
+			// 现有门票号码号（比起下一步，要在上面）
 			uint startIssueNum = getTicketTotalNum();
 			buyers[id].startIssueNum = startIssueNum;
 			buyers[id].addr = msg.sender;
